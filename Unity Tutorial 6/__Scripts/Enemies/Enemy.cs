@@ -10,6 +10,8 @@ public class Enemy : MonoBehaviour
     public float health = 10;
     public int score = 100; // Points earned for destroying this
 
+    public GameObject explosion;
+
     public float showDamageDuration = 0.1f; // # seconds to show damage
     public float powerUpDropChance = 1f; // Chance to drop a power-up
 
@@ -95,6 +97,17 @@ public class Enemy : MonoBehaviour
                     {
                         Main.S.ShipDestroyed(this);
                     }
+
+                    // Explode with primary color!
+                    if(explosion)
+                    {
+                        GameObject exploder = (Instantiate(explosion, this.transform.position, this.transform.rotation)).gameObject;
+                        // change color of particle system to match color of enemy
+                        ParticleSystem.MainModule ps = exploder.GetComponent<ParticleSystem>().main;
+                        ps.startColor = originalColors[0];
+                        Destroy(exploder, 2.0f);
+                    }
+                    
                     notifiedOfDestruction = true;
                     // Destroy this Enemy
                     Destroy(this.gameObject);
