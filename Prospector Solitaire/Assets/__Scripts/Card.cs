@@ -18,6 +18,72 @@ public class Card : MonoBehaviour
     public GameObject back; // The GameObject of the back of the card
     public CardDefinition def; // Parsed from DeckXML.xml
 
+    // List of the SpriteRenderer Components of this GameObject and its children
+    public SpriteRenderer[] spriteRenderers;
+
+    void Start()
+    {
+        SetSortOrder(0); // Ensures that the card starts properly depth sorted
+    }
+
+    public void PopulateSpriteRenderers()
+    {
+        // If spriteRenderers is null or empty
+        if (spriteRenderers == null || spriteRenderers.Length == 0)
+        {
+            // Get SpriteRenderer Components of this GameObject and its children
+            spriteRenderers = GetComponentsInChildren<SpriteRenderer>();
+        }
+    }
+
+    public void SetSortingLayerName(string tSLN)
+    {
+        PopulateSpriteRenderers();
+
+        foreach (SpriteRenderer tSR in spriteRenderers)
+        {
+            tSR.sortingLayerName = tSLN;
+        }
+    }
+
+    public void SetSortOrder(int sOrd)
+    {
+        PopulateSpriteRenderers();
+
+        // The white background of the card is on bottom (sOrd)
+        // Then the back is next (sOrd+1)
+        // Then the face is next (sOrd+2)
+        // Then the pips are on top (sOrd+3)
+
+        // Iterate through all the spriteRenderers as tSR
+        foreach (SpriteRenderer tSR in spriteRenderers)
+        {
+            if (tSR.gameObject == this.gameObject)
+            {
+                // If the gameObject is this.gameObject, it's the background
+                tSR.sortingOrder = sOrd; // Set it's order to sOrd
+                continue; // And continue to the next iteration of the loop
+            }
+
+            // Each of the children of this GameObject are named
+            // switch based on the names
+            switch (tSR.gameObject.name)
+            {
+                case "back":
+                    // If the name is "back", it's the back
+                    tSR.sortingOrder = sOrd + 2;
+                    break;
+
+                case "face": // If the name is "face"
+
+                default:     // or if it's anything else
+                    // Set it to the middle layer to be above the background but below the pips
+                    tSR.sortingOrder = sOrd + 1;
+                    break;
+            }
+        }
+    }
+
     public bool faceUp // Is this card face-up?
     {
         get
