@@ -235,7 +235,7 @@ public class Prospector : MonoBehaviour
                 MoveToDiscard(target); // Moves the target to the discardPile
                 MoveToTarget(Draw()); // Moves the next drawn card to the target
                 UpdateDrawPile(); // Restacks the drawPile
-                // ScoreManager.EVENT(eScoreEvent.draw);
+                ScoreManager.EVENT(eScoreEvent.draw);
                 // FloatingScoreHandler(eScoreEvent.draw);
                 break;
 
@@ -258,7 +258,7 @@ public class Prospector : MonoBehaviour
                 tableau.Remove(cd); // Remove it from the tableau List
                 MoveToTarget(cd); // Make it the target card
                 SetTableauFaces(); // Update tableau card face-ups
-                // ScoreManager.EVENT(eScoreEvent.mine);
+                ScoreManager.EVENT(eScoreEvent.mine);
                 // FloatingScoreHandler(eScoreEvent.mine);
                 break;
         }
@@ -304,14 +304,14 @@ public class Prospector : MonoBehaviour
     {
         if (won)
         {
-            print("Game Over. You won!");
+            ScoreManager.EVENT(eScoreEvent.gameWin);
         }
         else
         {
-            print("Game Over. You lost!");
+            ScoreManager.EVENT(eScoreEvent.gameLoss);
         }
-        // Reload the scene in 2 seconds
-        Invoke("ReloadLevel", 2);
+        
+        SceneManager.LoadScene("__Prospector_Scene_0");
     }
 
     public bool AdjacentRank(CardProspector c0, CardProspector c1)
