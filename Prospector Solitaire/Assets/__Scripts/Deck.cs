@@ -223,7 +223,7 @@ public class Deck : MonoBehaviour
         AddPips(card);
         AddFace(card);
         AddBack(card);
-        
+
         return(card);
     }
 
@@ -388,5 +388,33 @@ public class Deck : MonoBehaviour
 
         // Default to face-up
         card.faceUp = startFaceUp; // Use the property faceUp of Card
+    }
+
+    static public void Shuffle(ref List<Card> oCards)
+    {
+        // Create a temporary List to hold the new shuffle order
+        List<Card> tCards = new List<Card>();
+
+        int ndx; // This will hold the index of the card to be moved
+        tCards = new List<Card>(); // Initialize the temporary List
+
+        // Repeat as long as there are cards in the original List
+
+        while(oCards.Count > 0)
+        {
+            // Pick a random number between 0 and the count of the original List
+            ndx = Random.Range(0, oCards.Count);
+
+            // Add the card at that index to the temporary List
+            tCards.Add(oCards[ndx]);
+
+            // Remove that card from the original List
+            oCards.RemoveAt(ndx);
+        }
+
+        // Replace the original List with the temporary List
+        oCards = tCards;
+
+        // Because oCards is a reference (ref) parameter, the original argument that was passed in is changed as well.
     }
 }
