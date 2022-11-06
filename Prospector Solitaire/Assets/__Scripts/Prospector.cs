@@ -4,8 +4,11 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-// The premise of Prospector is that the player is digging down for gold, whereas the premise of Tri-Peaks is that the player is trying to climb three mountains.
-// The objective of Tri-Peaks is just to clear all the cards. The objective of Prospector is to earn points by having long chains of cards, and each gold card in the chain doubles the value of the whole chain.
+// The premise of Prospector is that the player is digging down for gold, whereas the premise of Tri-Peaks is that the player 
+// is trying to climb three mountains.
+
+// The objective of Tri-Peaks is just to clear all the cards. The objective of Prospector is to earn points by having long 
+// chains of cards, and each gold card in the chain doubles the value of the whole chain.
 public class Prospector : MonoBehaviour
 {
     static public Prospector s;
@@ -18,6 +21,11 @@ public class Prospector : MonoBehaviour
     public float yOffset = -2.5f;
     public Vector3 layoutCenter;
 
+    public Vector2 fsPosMid = new Vector2(0.5f, 0.90f);
+    public Vector2 fsPosRun = new Vector2(0.5f, 0.75f);
+    public Vector2 fsPosMid2 = new Vector2(0.4f, 1.0f);
+    public Vector2 fsPosEnd = new Vector2(0.5f, 0.95f);
+
     [Header("Set Dynamically")]
     public Deck deck;
     public Layout layout;
@@ -29,6 +37,8 @@ public class Prospector : MonoBehaviour
     public List<CardProspector> tableau;
     public List<CardProspector> discardPile;
 
+    public FloatingScore fsRun;
+
     void Awake()
     {
         s = this;
@@ -36,6 +46,8 @@ public class Prospector : MonoBehaviour
 
     void Start()
     {
+        Scoreboard.S.score = ScoreManager.SCORE;
+
         deck = GetComponent<Deck>(); // Get the Deck
         deck.InitDeck(deckXML.text); // Pass DeckXML to it
 
@@ -236,7 +248,8 @@ public class Prospector : MonoBehaviour
                 MoveToTarget(Draw()); // Moves the next drawn card to the target
                 UpdateDrawPile(); // Restacks the drawPile
                 ScoreManager.EVENT(eScoreEvent.draw);
-                // FloatingScoreHandler(eScoreEvent.draw);
+                ScoreManager.EVENT(eScoreEvent.draw);
+                FloatingScoreHandler(eScoreEvent.draw);
                 break;
 
             case eCardState.tableau:
@@ -331,6 +344,58 @@ public class Prospector : MonoBehaviour
 
         // Otherwise, return false
         return (false);
+    }
+
+    void FloatingScoreHandler(eScoreEvent evt)
+    {
+        List<Vector2> fsPts;
+        switch (evt)
+        {
+            // Same things need to happen whether it's a draw, a win, or a loss
+            case eScoreEvent.draw: // Drawing a card
+            case eScoreEvent.gameWin: // Won the round
+            case eScoreEvent.gameLoss: // Lost the round
+                // Add fsRun to the Scoreboard score
+                // Also add it to fsRun
+                fsPts = new List<Vector2>();
+                fsPts.Add(fsPosRun);
+                fsPts.Add(fsPosMid2);
+                fsPts.Add(fsPosEnd);
+
+                fsRun.reportFinishTo = Scoreboard.S.gameObject;
+                fsRun.Init(fsPts, 0 , 1);
+
+                // Also adjust the fontSize of fsRun
+                fsRun.fontSizes = new List<float>(new float[] { 28, 36, 4 });
+                fsRun = null;
+                break;
+            case eScoreEvent.mine: // Remove a mine card
+                // Create a FloatingScore for this score
+                FloatingScore fs;
+                // Move it from the mousePosition to fsRun.startPoint
+                Vector2 p0 = Input.mousePosition;
+                p0.x /= Screen.width;
+                p0.y /= Screen.height;
+                fsPts = new List<Vector2>();
+                fsPts.Add(p0);
+                fsPts.Add(fsPosMid);
+                fsPts.Add(fsPosRun);
+                fs = Scoreboard.S.CreateFloatingScore(ScoreManager.CHAIN, fsPts);
+                fs.fontSizes = new List<float>(new float[] { 4, 50, 28 });
+
+                if (fsRun == null)
+                {
+                    // If there is no fsRun currently, make fsRun be this one
+                    fsRun = fs;
+                    fsRun.reportFinishTo = null;
+                }
+                else
+                {
+                    // If there is already a fsRun, make it be the follower of this one
+                    fsRun.reportFinishTo = fs.gameObject;
+                }
+                break;
+        }
     }
 
 }
