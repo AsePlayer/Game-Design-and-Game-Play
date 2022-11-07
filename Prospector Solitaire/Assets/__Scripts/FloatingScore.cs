@@ -103,9 +103,7 @@ public class FloatingScore : MonoBehaviour
             {
                 uC = 1;
                 state = eFSState.post;
-                // Move to the position of the last Bezier point
-                rectTrans.anchoredPosition = bezierPts[bezierPts.Count - 1];
-                txt.fontSize = (int)fontSizes[fontSizes.Count - 1];
+
                 // If there is a callback GameObject, report this fs is done
                 if (reportFinishTo != null)
                 {
@@ -115,25 +113,29 @@ public class FloatingScore : MonoBehaviour
                 }
                 else
                 {
-                    // If there is no callback, just destroy this gameObject
-                    Destroy(gameObject);
+                    // If there is no callback, then don't destroy this.
+                    // Just let it stay still
+                    state = eFSState.idle;
                 }
-                return;
             }
             else
             {
+                // 0 <= u < 1, which means this FloatingScore is still moving
                 state = eFSState.active;
+                txt.enabled = true; // Show the score once more
             }
         }
 
-        // Use Bezier curve to move to a new Vector2 position
+        // Use Bezier curve to move to the right point
         Vector2 pos = Utils.Bezier(uC, bezierPts);
-        rectTrans.anchoredPosition = pos;
+        // RectTransform anchors can be used to position UI objects relative
+        // to total size of the screen
+        rectTrans.anchorMin = rectTrans.anchorMax = pos;
         if (fontSizes != null && fontSizes.Count > 0)
         {
             // Use Lerp to move to a new fontSize
-            int size = (int)Mathf.Lerp(fontSizes[0], fontSizes[fontSizes.Count - 1], uC);
-            txt.fontSize = size;
+            int size = Mathf.RoundToInt(Utils.Bezier(uC, fontSizes));
+            GetComponent<Text>().fontSize = size;
         }
     }
 

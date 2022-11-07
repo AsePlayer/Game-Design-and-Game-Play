@@ -26,6 +26,10 @@ public class Prospector : MonoBehaviour
     public Vector2 fsPosMid2 = new Vector2(0.4f, 1.0f);
     public Vector2 fsPosEnd = new Vector2(0.5f, 0.95f);
 
+    public float reloadDelay = 5f; // Delay between rounds
+
+    public Text gameOverText, roundResultText, highScoreText;
+
     [Header("Set Dynamically")]
     public Deck deck;
     public Layout layout;
@@ -42,12 +46,60 @@ public class Prospector : MonoBehaviour
     void Awake()
     {
         s = this;
+
+        SetUpUITexts();
+        
+    }
+
+
+    void SetUpUITexts()
+    {
+        // Set up the HighScore UI Text
+        GameObject go = GameObject.Find("HighScore");
+
+        if (go != null)
+        {
+            highScoreText = go.GetComponent<Text>();
+        }
+
+        int highScore = ScoreManager.HIGH_SCORE;
+
+        string hScore = "High Score: " + Utils.AddCommasToNumber(highScore);
+
+        go.GetComponent<Text>().text = hScore;
+
+        // Set up the UI Texts that show at the end of the round
+        go = GameObject.Find("GameOver");
+
+        if (go != null)
+        {
+            gameOverText = go.GetComponent<Text>();
+        }
+
+        go = GameObject.Find("RoundResult");
+
+        if (go != null)
+        {
+            roundResultText = go.GetComponent<Text>();
+        }
+
+        // Make the end of round texts invisible
+        ShowResultsUI(false);
+    }
+
+    void ShowResultsUI(bool show)
+    {
+        gameOverText.gameObject.SetActive(show);
+        roundResultText.gameObject.SetActive(show);
     }
 
     void Start()
     {
         Scoreboard.S.score = ScoreManager.SCORE;
 
+        ScoreManager.EVENT(eScoreEvent.gameWin);
+        FloatingScoreHandler(eScoreEvent.gameWin);
+        
         deck = GetComponent<Deck>(); // Get the Deck
         deck.InitDeck(deckXML.text); // Pass DeckXML to it
 
@@ -247,7 +299,7 @@ public class Prospector : MonoBehaviour
                 MoveToDiscard(target); // Moves the target to the discardPile
                 MoveToTarget(Draw()); // Moves the next drawn card to the target
                 UpdateDrawPile(); // Restacks the drawPile
-                ScoreManager.EVENT(eScoreEvent.draw);
+                
                 ScoreManager.EVENT(eScoreEvent.draw);
                 FloatingScoreHandler(eScoreEvent.draw);
                 break;
@@ -271,8 +323,9 @@ public class Prospector : MonoBehaviour
                 tableau.Remove(cd); // Remove it from the tableau List
                 MoveToTarget(cd); // Make it the target card
                 SetTableauFaces(); // Update tableau card face-ups
+                
                 ScoreManager.EVENT(eScoreEvent.mine);
-                // FloatingScoreHandler(eScoreEvent.mine);
+                FloatingScoreHandler(eScoreEvent.mine);
                 break;
         }
 
@@ -315,15 +368,39 @@ public class Prospector : MonoBehaviour
     // Called when the game is over. Simple for now, but expandable
     void GameOver(bool won)
     {
+        int score = ScoreManager.SCORE;
+        if (fsRun != null) score += fsRun.score;
+
         if (won)
         {
+            gameOverText.text = "Round Over";
+            roundResultText.text = "You won this round!\nRound Score: " + score;
+            ShowResultsUI(true);
+
             ScoreManager.EVENT(eScoreEvent.gameWin);
+            FloatingScoreHandler(eScoreEvent.gameWin);
         }
         else
         {
+            gameOverText.text = "Game Over";
+            if (ScoreManager.HIGH_SCORE <= score)
+            {
+                string str = "You got the high score!\nHigh score: " + score;
+                roundResultText.text = str;
+            }
+            else
+            {
+                roundResultText.text = "Your final score was: " + score;
+            }
+            ShowResultsUI(true);
             ScoreManager.EVENT(eScoreEvent.gameLoss);
+            FloatingScoreHandler(eScoreEvent.gameLoss);
         }
         
+        Invoke ("ReloadLevel", reloadDelay);
+    }
+
+    void ReloadLevel() {
         SceneManager.LoadScene("__Prospector_Scene_0");
     }
 
@@ -356,18 +433,22 @@ public class Prospector : MonoBehaviour
             case eScoreEvent.gameWin: // Won the round
             case eScoreEvent.gameLoss: // Lost the round
                 // Add fsRun to the Scoreboard score
-                // Also add it to fsRun
-                fsPts = new List<Vector2>();
-                fsPts.Add(fsPosRun);
-                fsPts.Add(fsPosMid2);
-                fsPts.Add(fsPosEnd);
+                if (fsRun != null)
+                {
+                    // Create points for the Bézier curve
+                    fsPts = new List<Vector2>();
+                    fsPts.Add(fsPosRun);
+                    fsPts.Add(fsPosMid2);
+                    fsPts.Add(fsPosEnd);
 
-                fsRun.reportFinishTo = Scoreboard.S.gameObject;
-                fsRun.Init(fsPts, 0 , 1);
-
-                // Also adjust the fontSize of fsRun
-                fsRun.fontSizes = new List<float>(new float[] { 28, 36, 4 });
-                fsRun = null;
+                    // Tell the fsRun to travel to these points
+                    fsRun.reportFinishTo = Scoreboard.S.gameObject;
+                    fsRun.Init(fsPts, 0, 1);
+                    
+                    // Set fsRun to null so it's created again
+                    fsRun.fontSizes = new List<float>(new float[] { 28, 36, 4 });
+                    fsRun = null;
+                }
                 break;
             case eScoreEvent.mine: // Remove a mine card
                 // Create a FloatingScore for this score
@@ -380,6 +461,7 @@ public class Prospector : MonoBehaviour
                 fsPts.Add(p0);
                 fsPts.Add(fsPosMid);
                 fsPts.Add(fsPosRun);
+                
                 fs = Scoreboard.S.CreateFloatingScore(ScoreManager.CHAIN, fsPts);
                 fs.fontSizes = new List<float>(new float[] { 4, 50, 28 });
 
@@ -392,7 +474,7 @@ public class Prospector : MonoBehaviour
                 else
                 {
                     // If there is already a fsRun, make it be the follower of this one
-                    fsRun.reportFinishTo = fs.gameObject;
+                    fs.reportFinishTo = fsRun.gameObject;
                 }
                 break;
         }

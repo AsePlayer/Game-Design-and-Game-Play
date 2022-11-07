@@ -27,12 +27,12 @@ public class Scoreboard : MonoBehaviour
         set
         {
             _score = value;
-            _scoreString = _score.ToString("N0");
-            // GetComponent<Text>().text = _scoreString;
+            scoreString = _score.ToString("N0");
+
         }
     }
 
-    // The scoreString property sets both _score and _scoreString
+    // The scoreString property also sets the Text.text
     public string scoreString
     {
         get
@@ -42,7 +42,6 @@ public class Scoreboard : MonoBehaviour
         set
         {
             _scoreString = value;
-            _score = int.Parse(_scoreString);
             GetComponent<Text>().text = _scoreString;
         }
     }
@@ -57,6 +56,7 @@ public class Scoreboard : MonoBehaviour
         {
             Debug.LogError("ERROR: Scoreboard.Awake(): S is already set!");
         }
+        
         // Find a reference to the Canvas GameObject
         canvasTrans = transform.parent;
     }
