@@ -48,6 +48,7 @@ public class Movement : MonoBehaviour
         
         // Move the object to the new position.
         transform.position = centerPosition + Vector2.ClampMagnitude(offset, movementRadius);
+
     }
 
     void OnDrawGizmos()
